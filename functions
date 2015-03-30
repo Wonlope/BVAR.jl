@@ -9,7 +9,8 @@ function vlag(X, p)
   T = size(X)[1]
   m = size(X)[2]
   XX = reshape(zeros(Float64,T*m*p),T,m*p)
-  ## still didn't find a better the way to create matrices before filling them
+  # still didn't find a better the way to create matrices before filling them
+  # could you give a hint on the differences between R and Julia in creating object before filling them?
   for i=1:p
     XX[(p+1):T, (m*(i-1)+1):(m*i)] = X[(p+1-i):(T-i), :]
   end
