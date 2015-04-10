@@ -2,22 +2,27 @@
 # starting from the simplest
 
 function vlag(X, p)
-   ## This function create
-    ## X = [x1 x2 ... xT]
-    ## where
-    ## x1 = (1 y_{t-1}' y_{t-2}' ... y_{t-p}')
-  T = size(X)[1]
-  m = size(X)[2]
-  XX = reshape(zeros(Float64,T*m*p),T,m*p)
-  # still didn't find a better the way to create matrices before filling them
-  # could you give a hint on the differences between R and Julia in creating object before filling them?
-  for i=1:p
-    XX[(p+1):T, (m*(i-1)+1):(m*i)] = X[(p+1-i):(T-i), :]
-  end
-  XX
-end
+          ## This function create
+           ## X = [x1 x2 ... xT]
+           ## where
+           ## x1 = (1 y_{t-1}' y_{t-2}' ... y_{t-p}')
+         n = size(X, 1)
+         m = size(X, 2)
+         XX = zeros(Float64, n-p, m*p)
+         ## reshape(zeros(Float64,T*m*p),T,m*p)
+         # still didn't find a better the way to create matrices before filling them
+         # could you give a hint on the differences between R and Julia in creating object before filling them?
+         for i=1:p
+           @inbounds XX[:, (m*(i-1)+1):(m*i)] = X[(p+1-i):(n-i), :]
+         end
+         XX
+       end
 
-vlag(reshape(1:60,10,2*3), 2)
+
+
+@time vlag(randn(100000, 15), 2)
+
+
 
 =========================================================
 
