@@ -2,27 +2,46 @@
 # starting from the simplest
 
 function vlag(X, p)
-          ## This function create
-           ## X = [x1 x2 ... xT]
-           ## where
-           ## x1 = (1 y_{t-1}' y_{t-2}' ... y_{t-p}')
-         n = size(X, 1)
-         m = size(X, 2)
-         XX = zeros(Float64, n-p, m*p)
-         ## reshape(zeros(Float64,T*m*p),T,m*p)
-         # still didn't find a better the way to create matrices before filling them
-         # could you give a hint on the differences between R and Julia in creating object before filling them?
-         for i=1:p
-           @inbounds XX[:, (m*(i-1)+1):(m*i)] = X[(p+1-i):(n-i), :]
-         end
-         XX
-       end
+    ## This function create
+    ## Z = [z_1 z_2 ... z_T]
+    ## where
+    ## z_t = (1 y_{t-1}' y_{t-2}' ... y_{t-p}')
+    n = size(X, 1)
+    m = size(X, 2)
+    Z = zeros(Float64, n-p, m*p)
+    ## reshape(zeros(Float64,T*m*p),T,m*p)
+    # still didn't find a better the way to create matrices before filling them
+    # could you give a hint on the differences between R and Julia in creating object before filling them?
+    for i=1:p
+        @inbounds Z[:, (m*(i-1)+1):(m*i)] = X[(p+1-i):(n-i), :]
+    end
+    Z
+end
 
 
 
-@time vlag(randn(100000, 15), 2)
+function vlag2(X, p)
+    ## This function create
+    ## Z = [z_1 z_2 ... z_T]
+    ## where
+    ## z_t = (1 y_{t-1}' y_{t-2}' ... y_{t-p}')
+    n = size(X, 1)
+    m = size(X, 2)
+    Z = zeros(Float64, n-p, m*p)
+    for i = 1:p, j = 1:m
+        for t = 1:n-p      
+            @inbounds Z[t, j+(i-1)*m] = X[t+p-i, j]
+        end
+    end 
+    Z
+end
 
 
+A = randn(220,100)
+vlag(A, 2)-vlag2(A, 2)
+
+@time vlag(A, 10);
+@time vlag2(A, 10);
 
 =========================================================
 
