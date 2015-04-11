@@ -74,8 +74,8 @@ function setbvar (Y, p, h, constant, is.direct = false)
       # might get messy to pull the data out of the eventual dataframe,
       # a restructuralization might be good
       ols = NA
-      out = DataFrame(ols = ols, data = out, constant = constant)
-      out
+      out = DataFrame(ols = ols, data = out, constant = constant)      
     end
   end
+  out
 end
