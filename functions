@@ -1,3 +1,4 @@
+using DataFrames
 # translation of the R code
 # starting from the simplest
 
@@ -64,6 +65,17 @@ function setbvar (Y, p, h, constant, is.direct = false)
       # construct Y, X, Z
       # X is a (T x k)
       # Z is the block diagonal matrix
-      
-      
-      
+      out = DataFrame(out = bvar_data_work(Y1, Y2, Yraw, m, p, Traw, constant))
+      out[:Y1] = Y1
+      out[:Traw] = Traw
+      out[:h] = h
+      ##----------------------------OLS-------------------------------
+      ## ols = bvar.ols(out[:Y][1], out[:X][1])
+      # might get messy to pull the data out of the eventual dataframe,
+      # a restructuralization might be good
+      ols = NA
+      out = DataFrame(ols = ols, data = out, constant = constant)
+      out
+    end
+  end
+end
