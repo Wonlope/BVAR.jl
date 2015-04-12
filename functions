@@ -79,3 +79,37 @@ function setbvar (Y, p, h, constant, is.direct = false)
   end
   out
 end
+
+===============================================================
+
+function priorBGR(vardata, lambda, constant, delta, coefsum)
+  # PRIORS
+  # Construct prior parameters using dummy observations as in BGR 
+  # equation (5) page 75
+  
+  m = vardata[:m][1]
+  n = m
+  T = vardata[:T][1]
+  p = vardata[:p][1]
+  k = vardata[:k][1]
+  Y = vardata[:Y][1]
+  Yraw = vardata[:Yraw][1]
+  constant = vardata[:constant][1]
+  
+  if isdefined(:delta)==false
+    delta = 1
+  end
+  if length(delta)!=1
+    if length(delta)!=m
+      return("delta of the wrong dimension")
+    else
+      delta = rep(delta,m)
+    end
+  end
+  
+  # Get residual variances of univariate p-lag autoregressions
+  # Here we just run the AR(p) model on each equation, ignoring the constans
+  # and exogenous variables (if they have been specified in the original VAR model)
+  
+  # the AR model needed
+  s.i = 
