@@ -1,0 +1,26 @@
+type RegOut{V<:Float64}
+  β::Matrix{V}
+  errors::Matrix{V}
+  forecasts::Matrix{V}
+end
+
+function OLS (y, x)
+  Y = y
+  X = x
+  β = inv((X'*X))*X'*Y
+  return(β)
+end
+
+function AR(y, p)
+  T = length(y)
+  Y = y[(p+1):end, :]
+  X = Array(Float64, T-p, p)
+  for ii in 1:p
+    X[:, ii] = y[(p-ii+1):(T-ii), :]
+  end
+  β = OLS(Y, X)
+  residuals = Y - X*β
+  RegOut(β, residuals, zeros(Float64, 10,10))
+  # forecasts are not added yet!!
+end
+
