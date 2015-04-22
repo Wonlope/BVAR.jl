@@ -173,4 +173,13 @@ function priorBGR(vardata, lambda, constant, delta, coefsum)
     Yd = vcat(Yd, Ydc)
   end
 
-  Omega0 =
+  Omega0 = inv(Xd'*Xd)
+  B0 = inv(Xd'*Xd)*(Xd'*Yd)
+  Psi0 = (Yd-Xd*B0)'*(Yd-Xd*B0)
+  # rearrange for the constant on top
+  # return(list(B = B0, Psi = Psi0, Omega = Omega0, Xd = Xd, Yd = Yd))
+
+end
+
+===============================================================
+
