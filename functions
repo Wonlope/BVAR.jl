@@ -154,4 +154,23 @@ function priorBGR(vardata, lambda, constant, delta, coefsum)
   dsl2 = diagm(sqrt(s.i)*delta)/lambda
   epsilon = 0.001
 
-  Xd.1
+  # cbind = hcat
+  Xd1 = hcat(kron(Js,dls), zeros(Float64, m*p, 1))
+  Xd2 = hcat(zeros(Float64, n, n*p), zeros(Float64, n, 1))
+  Xd3 = hcat(zeros(Float64, 1, n*p), epsilon)
+
+  Xd = vcat(Xd1, Xd2, Xd3)
+  Yd = vcat(dsl2, zeros(Float64, n*(p-1), n), diagm(sqrt(s.i)), zeros(Float64, 1, n))
+
+  if coefsum == true
+    colmeans = Array(Float64, size(vardata.Yraw)[2]) # to be careful with notations of function output (to use types later)
+    for i in 1:length(colmeans)
+      colmeans[i] = mean(vardata.Yraw[:, i])
+    end
+    Ydc = diagm(delta*colmeans)/10*lambda
+    Xdc = vcat(kron(ones(Float64, p),Ydc), zeros(Float64, m))
+    Xd = vcat(Xd, Xdc')
+    Yd = vcat(Yd, Ydc)
+  end
+
+  Omega0 =
