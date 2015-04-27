@@ -183,3 +183,25 @@ end
 
 ===============================================================
 
+function bvar_data_work (Y1, Y2, Yraw, m, p, Traw, constant)
+  Ylag = vlag(Y2, p)
+  if constant == true
+    X1 = hcat(ones(Float64, Traw-p, 1), Ylag[(p+1):Traw, :])
+  else
+    X1 = Ylag[(p+1:Traw), :]
+  end
+  # create the block diagonal matrix Z
+  Z = kron(eye(m), X1)
+  # form Y matrix accordigly
+  # delete first "LAGS" rows to match the dimensions of X matrix
+  Y1 = Y1[(p+1):Traw, :]
+  # this is the final Y matrix used for the VAR
+  # Traw - the dimention of the initial data
+  # time series observations of Y and X
+  T = Traw - p
+  Y = Y1
+  X = X1
+  # return object of interest
+  # to think about correct types!!!
+  #out = list(Y = Y, X = X, Z = Z, Yraw = Yraw, p = p, m = m, T = T, k = size(X)[2], constant = constant)
+end
