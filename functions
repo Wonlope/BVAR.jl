@@ -205,3 +205,101 @@ function bvar_data_work (Y1, Y2, Yraw, m, p, Traw, constant)
   # to think about correct types!!!
   #out = list(Y = Y, X = X, Z = Z, Yraw = Yraw, p = p, m = m, T = T, k = size(X)[2], constant = constant)
 end
+
+=================================================================
+
+function BVARBGR (Y, p, lambda, coefsum = false, constant = true, direct = false, h = 1, predictive = F, ngibbs = 1000, repfor = 10, hmax = 8)
+  out = setbvar(Y = Y, p = p, h = h, is.direct = direct, constant = constant)
+
+  #be careful here!!!!
+  T = out.data.T
+  k = out.data.k
+  m = out.data.m
+  p = out.data.p
+
+  # setup containers from predictive
+  if predictive == true
+    if direct == true
+      Y_predictive = zeros(Float64, repfor*ngibbs, m)
+    else
+      Y_predictive = zeros(Float64, repfor*ngibbs, m, hmax)
+    end
+  else
+    Y_predictive = NaN # check the use of NA type
+  end
+
+  # FIXME: fix the constant.... at the moment is always included
+  prior = priorBGR(out.data, lambda = lambda, constant = constant, delta = 1, coefsum = coefsum)
+
+  # rearrange the data to have the constant at the end
+  out.data.X = hcat(out.data.X[:,2:end], ones(Float64, 1, size(out.data.X)[2]))
+  # Posterior mean coefficient
+  XX = out.data.X'*out.data.X
+  XY = out.data.X'*out.data.Y
+  Omega = prior.Omega
+  iOmega = inv(Omega)
+
+  Ys = vcat(out.data.Y, prior.Yd)
+  Xs = vcat(X, prior.Xd)
+
+  # posterior mean of the coefficient
+  Bposteriormean = inv(Xs'*Xs)*Xs'*Ys
+  bposteriormean = vec(Bposteriormean) # be careful in using vectors
+
+  # fitted mean value
+  fitted = out.data.X*B.posterior.mean
+  residuals = out.data.Y - fitted
+  YY = out.data.Y
+
+  # generate forecast as mean forecast
+  if direct == true
+    X_fore = [vec(YY[T, :]), vec(X[T, 1:(m*(p-1))]), 1]  # check the dimension of ones
+    fcast = X_fore*Bposteriormean
+  else
+    # generate out-of-sample point forecast
+    # 12 period
+    fcast = zeros(Float64, 12, m)
+    X_fores = zeros(Float64, 12, k)
+    X_fore = [vec(YY[T, :]), vec(X[T, 1:(m*(p-1))]), 1]
+    for hh in 1:12
+      X_fores[hh, :] = X_fore
+      fcast[hh, :] = Y_hat = X_fore*Bposteriormean # be careful using vectors
+      X_fore = [vec(Y_hat), vec(X_fore[1:(m*(p-1))]), 1]
+    end
+    # colnames(fcast) = colnames(Y)
+    # rownames(fcast) = paste('h=', 1:12, sep='')
+  end
+
+  # Draw predictive distribution
+  if predictive == true
+    X_fore = [YY[T, :], X[T, 1:(m*(p-1))], 1]
+
+    Td = m*p+m+1
+    alpha = T+Td+k-2
+    # Initialize Matrix SIGMA
+    SSE = (Ys-Xs*Bposteriormean)'*(Ys-Xs*Bposteriormean)
+    SIGMA = SSE/(T+Ts-k+2)
+    cSIGMA = chol(SIGMA)
+    # obtain (X'X)^(-1)
+    iXX = inv((Xs'*Xs))
+    # obtain chol ((X'X)^(-1))
+    ciXX = chol(iXX)
+
+    ## We can use this this since we will need chol(kron(SIGMA, X'X^(-1))) which
+    ## is equal to kron(chol(SIGMA), chol(X'X)^(-1))
+
+    ## Note to myself if R=chol(x), then R'R = x Thus n draws from N(0, V), where
+    ## V is (s x s) can be obtained chol(V)%*%matrix(rnorm(n*s), nrow = n) or
+    ## crossprod(chol(V), matrix(rnorm(n*s), nrow = n))
+
+    ## Also, draw from a inverse wishart iW(V, nu) can be done by drawing from a
+    ## [W(S^(-1),nu)]^(-1)] In code, tcrossprod(crossprod(chol(solve(S)),
+    ## matrix(rnorm(nu*s), nrow = s)))
+
+
+    ## draw_predictive = cSIGMA, ciXX, SSE, m, p, k, direct
+
+    ##out <- draw_predictive(cSIGMA, ciXX, SSE, repfor, ngibbs, h.max, X_fore, alpha, b.posterior.mean, direct)
+    for sgibbs in 1:repfor
+      # draw B
+      V_post = kron(cSIGMA, ciXX)
