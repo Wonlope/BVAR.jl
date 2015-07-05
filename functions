@@ -1,6 +1,7 @@
 using DataFrames
 # translation of the R code
 # starting from the simplest
+# all the dots in the names are simply deleted
 
 ++++++++++++++++++++++++++++++++++++++++++++
 # my additions
@@ -31,7 +32,19 @@ function AR(y, p)
 end
 # have to figure out how to export these from another file
 +++++++++++++++++++++++++++++++++++++++++++++++++
-
+#### TYPE DECLARATIONS
+type bvar_data{V<:Float64} # for the bvar_data_work output
+  Y::Matrix{V}
+  X::Matrix{V}
+  Z::Matrix{V}
+  Yraw:: Matrix{V}
+  p::Int
+  m::Int
+  T::Int
+  k::Int
+  constant::Bool
+end
++++++++++++++++++++++++++++++++++++++++++++++++++
 function vlag(X, p)
     ## This function create
     ## Z = [z_1 z_2 ... z_T]
@@ -184,11 +197,11 @@ end
 ===============================================================
 
 function bvar_data_work (Y1, Y2, Yraw, m, p, Traw, constant)
-  Ylag = vlag(Y2, p)
+  Ylag = vlag2(Y2, p)
   if constant == true
-    X1 = hcat(ones(Float64, Traw-p, 1), Ylag[(p+1):Traw, :])
+    X1 = hcat(ones(Float64, Traw-p, 1), Ylag)
   else
-    X1 = Ylag[(p+1:Traw), :]
+    X1 = Ylag
   end
   # create the block diagonal matrix Z
   Z = kron(eye(m), X1)
@@ -201,8 +214,10 @@ function bvar_data_work (Y1, Y2, Yraw, m, p, Traw, constant)
   T = Traw - p
   Y = Y1
   X = X1
+  k = size(X)[2]
   # return object of interest
   # to think about correct types!!!
+  out = bvar_data(Y, X, Z, Yraw, p, m, T, k, constant)
   #out = list(Y = Y, X = X, Z = Z, Yraw = Yraw, p = p, m = m, T = T, k = size(X)[2], constant = constant)
 end
 
@@ -281,6 +296,7 @@ function BVARBGR (Y, p, lambda, coefsum = false, constant = true, direct = false
     SIGMA = SSE/(T+Ts-k+2)
     cSIGMA = chol(SIGMA)
     # obtain (X'X)^(-1)
+    XssX = Xs'*Xs
     iXX = inv((Xs'*Xs))
     # obtain chol ((X'X)^(-1))
     ciXX = chol(iXX)
@@ -303,3 +319,4 @@ function BVARBGR (Y, p, lambda, coefsum = false, constant = true, direct = false
     for sgibbs in 1:repfor
       # draw B
       V_post = kron(cSIGMA, ciXX)
+      bdraw = bposteriormean + V_post'*randn(k*m)
